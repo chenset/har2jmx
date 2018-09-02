@@ -22,7 +22,7 @@ foreach ($json['log']['entries'] as $entry) {
     $hashTree->appendChild($HTTPSamplerProxy);
     $HTTPSamplerProxy->setAttribute('guiclass', 'HttpTestSampleGui');
     $HTTPSamplerProxy->setAttribute('testclass', 'HTTPSamplerProxy');
-    $HTTPSamplerProxy->setAttribute('testname', $entry['request']['method'] . '  ' . $entry['request']['url']);
+    $HTTPSamplerProxy->setAttribute('testname', $entry['request']['method'] . '  ' . explode('?', $entry['request']['url'])[0]);
     $HTTPSamplerProxy->setAttribute('enabled', 'true');
     $elementProp = $dom->createElement('elementProp');
     $HTTPSamplerProxy->appendChild($elementProp);
@@ -37,10 +37,75 @@ foreach ($json['log']['entries'] as $entry) {
     $elementProp->appendChild($collectionProp);
     $collectionProp->setAttribute('name', 'Arguments.arguments');
 
+
+    //HTTP body
     if (isset($entry['request']['postData']['params'])) {
-        foreach ($entry['request']['postData']['params'] as $param) {
+        //PUT
+        if (strtolower($entry['request']['method']) === 'put') {
+
+            //using postBodyRaw
+            $boolProp = $dom->createElement('boolProp');
+            $boolProp->setAttribute('name', 'HTTPSampler.postBodyRaw');
+            $boolProp->nodeValue = 'true';
+            $HTTPSamplerProxy->appendChild($boolProp);
+
+            //variables
             $elementProp = $dom->createElement('elementProp');
-            $elementProp->setAttribute('name', urldecode($param['name']));
+            $elementProp->setAttribute('name', '');
+            $elementProp->setAttribute('elementType', 'HTTPArgument');
+            $boolProp = $dom->createElement('boolProp');
+            $boolProp->setAttribute('name', 'HTTPArgument.always_encode');
+            $boolProp->nodeValue = 'false';
+            $elementProp->appendChild($boolProp);
+            $stringProp = $dom->createElement('stringProp');
+            $stringProp->setAttribute('name', 'Argument.value');
+            $stringProp->appendChild($dom->createCDATASection(urldecode($entry['request']['postData']['text'])));
+            $elementProp->appendChild($stringProp);
+            $stringProp = $dom->createElement('stringProp');
+            $stringProp->setAttribute('name', 'Argument.metadata');
+            $stringProp->nodeValue = '=';
+            $elementProp->appendChild($stringProp);
+            $collectionProp->appendChild($elementProp);
+        } else {
+            //POST
+            foreach ($entry['request']['postData']['params'] as $param) {
+                $elementProp = $dom->createElement('elementProp');
+                $elementProp->setAttribute('name', urldecode($param['name']));
+                $elementProp->setAttribute('elementType', 'HTTPArgument');
+                $boolProp = $dom->createElement('boolProp');
+                $boolProp->setAttribute('name', 'HTTPArgument.always_encode');
+                $boolProp->nodeValue = 'true';
+                $elementProp->appendChild($boolProp);
+                $stringProp = $dom->createElement('stringProp');
+                $stringProp->setAttribute('name', 'Argument.value');
+                if (isset($_POST['type']) && $_POST['type'] == 2) {
+                    $stringProp->nodeValue = '${' . urldecode($param['name']) . '}';
+                } else {
+                    $stringProp->nodeValue = urldecode($param['value']);
+                }
+                $elementProp->appendChild($stringProp);
+                $stringProp = $dom->createElement('stringProp');
+                $stringProp->setAttribute('name', 'Argument.metadata');
+                $stringProp->nodeValue = '=';
+                $elementProp->appendChild($stringProp);
+                $boolProp = $dom->createElement('boolProp');
+                $boolProp->setAttribute('name', 'HTTPArgument.use_equals');
+                $boolProp->nodeValue = 'true';
+                $elementProp->appendChild($boolProp);
+                $stringProp = $dom->createElement('stringProp');
+                $stringProp->setAttribute('name', 'Argument.name');
+                $stringProp->nodeValue = urldecode($param['name']);
+                $elementProp->appendChild($stringProp);
+                $collectionProp->appendChild($elementProp);
+            }
+        }
+    }
+
+    //GET
+    if (isset($entry['request']['queryString']) && strtolower($entry['request']['method']) === 'get') {
+        foreach ($entry['request']['queryString'] as $queryString) {
+            $elementProp = $dom->createElement('elementProp');
+            $elementProp->setAttribute('name', urldecode($queryString['name']));
             $elementProp->setAttribute('elementType', 'HTTPArgument');
             $boolProp = $dom->createElement('boolProp');
             $boolProp->setAttribute('name', 'HTTPArgument.always_encode');
@@ -49,9 +114,9 @@ foreach ($json['log']['entries'] as $entry) {
             $stringProp = $dom->createElement('stringProp');
             $stringProp->setAttribute('name', 'Argument.value');
             if (isset($_POST['type']) && $_POST['type'] == 2) {
-                $stringProp->nodeValue = '${' . urldecode($param['name']) . '}';
+                $stringProp->nodeValue = '${' . urldecode($queryString['name']) . '}';
             } else {
-                $stringProp->nodeValue = urldecode($param['value']);
+                $stringProp->nodeValue = urldecode($queryString['value']);
             }
             $elementProp->appendChild($stringProp);
             $stringProp = $dom->createElement('stringProp');
@@ -64,7 +129,7 @@ foreach ($json['log']['entries'] as $entry) {
             $elementProp->appendChild($boolProp);
             $stringProp = $dom->createElement('stringProp');
             $stringProp->setAttribute('name', 'Argument.name');
-            $stringProp->nodeValue = urldecode($param['name']);
+            $stringProp->nodeValue = urldecode($queryString['name']);
             $elementProp->appendChild($stringProp);
             $collectionProp->appendChild($elementProp);
         }
@@ -90,7 +155,7 @@ foreach ($json['log']['entries'] as $entry) {
     $stringProp = $dom->createElement('stringProp');
     $HTTPSamplerProxy->appendChild($stringProp);
     $stringProp->setAttribute('name', 'HTTPSampler.contentEncoding');
-    $stringProp->nodeValue = '';
+    $stringProp->nodeValue = 'utf-8';
 
     $stringProp = $dom->createElement('stringProp');
     $HTTPSamplerProxy->appendChild($stringProp);
