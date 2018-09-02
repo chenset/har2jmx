@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="renderer" content="webkit">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>HAR to JMX</title>
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+            -webkit-box-sizing: border-box;
+        }
+
+        body {
+            font-family: Helvetica, Arial, sans-serif, "Microsoft YaHei", 'Helvetica Neue';
+            color: #333;
+            font-size: 14px;
+        }
+
+        .container {
+            margin: 0 auto;
+            max-width: 1200px;
+            padding: 0 15px;
+        }
+
+        .button {
+            background-color: #4CAF50; /* Green */
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <form style="margin-top: 100px">
+        <textarea name="text" id="convert-text"
+                  style="padding:10px;width: 100%;height: 500px;border:2px dashed #ccc;border-radius:5px;"
+                  placeholder="在此粘贴 har 文件内容 .."></textarea>
+        <input type="hidden" value="0" name="type" id="convert-type">
+        <br>
+        <br>
+        <div style="text-align: center">
+            <button class="button" type="button" id="btn-value">填充原值</button>
+            <button class="button" type="button" id="btn-csv">支持CSV</button>
+        </div>
+    </form>
+</div>
+
+<script src="./js/jquery-3.3.1.min.js"></script>
+
+<script>
+    $(document)
+        .on('click', '#btn-value', function (e) {
+            e.preventDefault();
+            submit(1);
+        })
+        .on('click', '#btn-csv', function (e) {
+            e.preventDefault();
+            submit(2);
+        });
+
+    function submit(type) {
+        var text = $('#convert-text').val();
+        if (!text) {
+            return;
+        }
+
+        const fr = document.createElement("form");
+        document.body.appendChild(fr);
+        fr.method = 'post';
+        fr.action = '/convert.php';
+        fr.target = '_blank';
+
+        var el = document.createElement("input");
+        el.setAttribute("name", "text");
+        el.setAttribute("type", "hidden");
+        el.setAttribute("value", window.btoa(text));
+        fr.appendChild(el);
+
+        el = document.createElement("input");
+        el.setAttribute("name", "type");
+        el.setAttribute("type", "hidden");
+        el.setAttribute("value", type);
+        fr.appendChild(el);
+
+        fr.submit();
+        fr.remove();
+    }
+</script>
+</body>
+</html>
