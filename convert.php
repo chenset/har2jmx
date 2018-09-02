@@ -37,11 +37,14 @@ foreach ($json['log']['entries'] as $entry) {
     $elementProp->appendChild($collectionProp);
     $collectionProp->setAttribute('name', 'Arguments.arguments');
 
+    //for CSV
+    $csvVariableNames = [];
+    $increaseVariableName = 'a';
 
     //HTTP body
     if (isset($entry['request']['postData']['params'])) {
         //PUT & PATCH
-        if (in_array(strtolower($entry['request']['method']),['put','patch'])) {
+        if (in_array(strtolower($entry['request']['method']), ['put', 'patch'])) {
             //using postBodyRaw
             $boolProp = $dom->createElement('boolProp');
             $boolProp->setAttribute('name', 'HTTPSampler.postBodyRaw');
@@ -78,7 +81,7 @@ foreach ($json['log']['entries'] as $entry) {
                 $stringProp = $dom->createElement('stringProp');
                 $stringProp->setAttribute('name', 'Argument.value');
                 if (isset($_POST['type']) && $_POST['type'] == 2) {
-                    $stringProp->nodeValue = '${' . urldecode($param['name']) . '}';
+                    $stringProp->nodeValue = '${' . $increaseVariableName . '}';
                 } else {
                     $stringProp->nodeValue = urldecode($param['value']);
                 }
@@ -96,6 +99,8 @@ foreach ($json['log']['entries'] as $entry) {
                 $stringProp->nodeValue = urldecode($param['name']);
                 $elementProp->appendChild($stringProp);
                 $collectionProp->appendChild($elementProp);
+
+                $csvVariableNames[] = $increaseVariableName++;
             }
         }
     }
@@ -113,7 +118,7 @@ foreach ($json['log']['entries'] as $entry) {
             $stringProp = $dom->createElement('stringProp');
             $stringProp->setAttribute('name', 'Argument.value');
             if (isset($_POST['type']) && $_POST['type'] == 2) {
-                $stringProp->nodeValue = '${' . urldecode($queryString['name']) . '}';
+                $stringProp->nodeValue = '${' . $increaseVariableName . '}';
             } else {
                 $stringProp->nodeValue = urldecode($queryString['value']);
             }
@@ -131,6 +136,8 @@ foreach ($json['log']['entries'] as $entry) {
             $stringProp->nodeValue = urldecode($queryString['name']);
             $elementProp->appendChild($stringProp);
             $collectionProp->appendChild($elementProp);
+
+            $csvVariableNames[] = $increaseVariableName++;
         }
     }
 
@@ -231,6 +238,66 @@ foreach ($json['log']['entries'] as $entry) {
         $elementProp->appendChild($stringProp);
         $stringProp->setAttribute('name', 'Header.value');
         $stringProp->nodeValue = $header['value'];
+    }
+
+    //CSV Data Set Config, 'put/patch' does not support
+    if (isset($_POST['type']) && $_POST['type'] == 2 && !in_array(strtolower($entry['request']['method']), ['put', 'patch'])) {
+        $hashTree2->appendChild($dom->createElement('hashTree'));//empty node
+
+        $CSVDataSet = $dom->createElement('CSVDataSet');
+        $hashTree2->appendChild($CSVDataSet);
+        $CSVDataSet->setAttribute('guiclass', 'TestBeanGUI');
+        $CSVDataSet->setAttribute('testclass', 'CSVDataSet');
+        $CSVDataSet->setAttribute('testname', 'CSV Data Set Config');
+        $CSVDataSet->setAttribute('enabled', 'true');
+
+        $stringProp = $dom->createElement('stringProp');
+        $CSVDataSet->appendChild($stringProp);
+        $stringProp->setAttribute('name', 'delimiter');
+        $stringProp->nodeValue = ',';
+
+        $stringProp = $dom->createElement('stringProp');
+        $CSVDataSet->appendChild($stringProp);
+        $stringProp->setAttribute('name', 'fileEncoding');
+        $stringProp->nodeValue = 'UTF-8';
+
+//        $stringProp = $dom->createElement('stringProp');
+//        $CSVDataSet->appendChild($stringProp);
+//        $stringProp->setAttribute('name', 'filename');
+//        $stringProp->appendChild($dom->createCDATASection('C:\data.csv'));
+
+        $boolProp = $dom->createElement('boolProp');
+        $CSVDataSet->appendChild($boolProp);
+        $boolProp->setAttribute('name', 'ignoreFirstLine');
+        $boolProp->nodeValue = 'false';
+
+        $boolProp = $dom->createElement('boolProp');
+        $CSVDataSet->appendChild($boolProp);
+        $boolProp->setAttribute('name', 'quotedData');
+        $boolProp->nodeValue = 'true';
+
+        $boolProp = $dom->createElement('boolProp');
+        $CSVDataSet->appendChild($boolProp);
+        $boolProp->setAttribute('name', 'recycle');
+        $boolProp->nodeValue = 'true';
+
+        $stringProp = $dom->createElement('stringProp');
+        $CSVDataSet->appendChild($stringProp);
+        $stringProp->setAttribute('name', 'shareMode');
+        $stringProp->nodeValue = 'shareMode.thread';
+
+        $boolProp = $dom->createElement('boolProp');
+        $CSVDataSet->appendChild($boolProp);
+        $boolProp->setAttribute('name', 'stopThread');
+        $boolProp->nodeValue = 'false';
+
+        $stringProp = $dom->createElement('stringProp');
+        $CSVDataSet->appendChild($stringProp);
+        $stringProp->setAttribute('name', 'variableNames');
+        $stringProp->appendChild($dom->createCDATASection(implode(',', $csvVariableNames)));
+
+
+        $hashTree2->appendChild($dom->createElement('hashTree'));//empty node
     }
 }
 
