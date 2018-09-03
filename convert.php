@@ -44,7 +44,7 @@ foreach ($json['log']['entries'] as $entry) {
     //HTTP body
     if (isset($entry['request']['postData']['params'])) {
         //PUT & PATCH or JSON HTTP body
-        if (in_array(strtolower($entry['request']['method']), ['put', 'patch']) || null !== json_decode(urldecode($entry['request']['postData']['text']), true)) {
+        if (in_array(strtolower($entry['request']['method']), ['put', 'patch']) || null !== json_decode(stripslashes(urldecode($entry['request']['postData']['text'])), true)) {
             //using postBodyRaw
             $boolProp = $dom->createElement('boolProp');
             $boolProp->setAttribute('name', 'HTTPSampler.postBodyRaw');
