@@ -42,70 +42,68 @@ foreach ($json['log']['entries'] as $entry) {
     $increaseVariableName = 'a';
 
     //HTTP body
-    if (isset($entry['request']['postData']['params'])) {
+    if (isset($entry['request']['postData']['text']) && (in_array(strtolower($entry['request']['method']), ['put', 'patch']) || null !== json_decode(stripslashes(urldecode($entry['request']['postData']['text'])), true))) {
         //PUT & PATCH or JSON HTTP body
-        if (in_array(strtolower($entry['request']['method']), ['put', 'patch']) || null !== json_decode(stripslashes(urldecode($entry['request']['postData']['text'])), true)) {
-            //using postBodyRaw
-            $boolProp = $dom->createElement('boolProp');
-            $boolProp->setAttribute('name', 'HTTPSampler.postBodyRaw');
-            $boolProp->nodeValue = 'true';
-            $HTTPSamplerProxy->appendChild($boolProp);
+        //using postBodyRaw
+        $boolProp = $dom->createElement('boolProp');
+        $boolProp->setAttribute('name', 'HTTPSampler.postBodyRaw');
+        $boolProp->nodeValue = 'true';
+        $HTTPSamplerProxy->appendChild($boolProp);
 
-            //variables
+        //variables
+        $elementProp = $dom->createElement('elementProp');
+        $elementProp->setAttribute('name', '');
+        $elementProp->setAttribute('elementType', 'HTTPArgument');
+        $boolProp = $dom->createElement('boolProp');
+        $boolProp->setAttribute('name', 'HTTPArgument.always_encode');
+        $boolProp->nodeValue = 'false';
+        $elementProp->appendChild($boolProp);
+        $stringProp = $dom->createElement('stringProp');
+        $stringProp->setAttribute('name', 'Argument.value');
+        $stringProp->appendChild($dom->createCDATASection(urldecode($entry['request']['postData']['text'])));
+        $elementProp->appendChild($stringProp);
+        $stringProp = $dom->createElement('stringProp');
+        $stringProp->setAttribute('name', 'Argument.metadata');
+        $stringProp->nodeValue = '=';
+        $elementProp->appendChild($stringProp);
+        $collectionProp->appendChild($elementProp);
+    } else if (isset($entry['request']['postData']['params'])) {
+        //POST
+        foreach ($entry['request']['postData']['params'] as $param) {
             $elementProp = $dom->createElement('elementProp');
-            $elementProp->setAttribute('name', '');
+            $elementProp->setAttribute('name', urldecode($param['name']));
             $elementProp->setAttribute('elementType', 'HTTPArgument');
             $boolProp = $dom->createElement('boolProp');
             $boolProp->setAttribute('name', 'HTTPArgument.always_encode');
-            $boolProp->nodeValue = 'false';
+            $boolProp->nodeValue = 'true';
             $elementProp->appendChild($boolProp);
             $stringProp = $dom->createElement('stringProp');
             $stringProp->setAttribute('name', 'Argument.value');
-            $stringProp->appendChild($dom->createCDATASection(urldecode($entry['request']['postData']['text'])));
+            if (isset($_POST['type']) && $_POST['type'] == 2) {
+                $stringProp->nodeValue = '${' . $increaseVariableName . '}';
+            } else {
+                $stringProp->nodeValue = urldecode($param['value']);
+            }
             $elementProp->appendChild($stringProp);
             $stringProp = $dom->createElement('stringProp');
             $stringProp->setAttribute('name', 'Argument.metadata');
             $stringProp->nodeValue = '=';
             $elementProp->appendChild($stringProp);
+            $boolProp = $dom->createElement('boolProp');
+            $boolProp->setAttribute('name', 'HTTPArgument.use_equals');
+            $boolProp->nodeValue = 'true';
+            $elementProp->appendChild($boolProp);
+            $stringProp = $dom->createElement('stringProp');
+            $stringProp->setAttribute('name', 'Argument.name');
+            $stringProp->nodeValue = urldecode($param['name']);
+            $elementProp->appendChild($stringProp);
             $collectionProp->appendChild($elementProp);
-        } else {
-            //POST
-            foreach ($entry['request']['postData']['params'] as $param) {
-                $elementProp = $dom->createElement('elementProp');
-                $elementProp->setAttribute('name', urldecode($param['name']));
-                $elementProp->setAttribute('elementType', 'HTTPArgument');
-                $boolProp = $dom->createElement('boolProp');
-                $boolProp->setAttribute('name', 'HTTPArgument.always_encode');
-                $boolProp->nodeValue = 'true';
-                $elementProp->appendChild($boolProp);
-                $stringProp = $dom->createElement('stringProp');
-                $stringProp->setAttribute('name', 'Argument.value');
-                if (isset($_POST['type']) && $_POST['type'] == 2) {
-                    $stringProp->nodeValue = '${' . $increaseVariableName . '}';
-                } else {
-                    $stringProp->nodeValue = urldecode($param['value']);
-                }
-                $elementProp->appendChild($stringProp);
-                $stringProp = $dom->createElement('stringProp');
-                $stringProp->setAttribute('name', 'Argument.metadata');
-                $stringProp->nodeValue = '=';
-                $elementProp->appendChild($stringProp);
-                $boolProp = $dom->createElement('boolProp');
-                $boolProp->setAttribute('name', 'HTTPArgument.use_equals');
-                $boolProp->nodeValue = 'true';
-                $elementProp->appendChild($boolProp);
-                $stringProp = $dom->createElement('stringProp');
-                $stringProp->setAttribute('name', 'Argument.name');
-                $stringProp->nodeValue = urldecode($param['name']);
-                $elementProp->appendChild($stringProp);
-                $collectionProp->appendChild($elementProp);
 
-                $csvVariableNames[] = $increaseVariableName++;
-            }
+            $csvVariableNames[] = $increaseVariableName++;
         }
     }
 
-    //GET
+//GET
     if (isset($entry['request']['queryString']) && strtolower($entry['request']['method']) === 'get') {
         foreach ($entry['request']['queryString'] as $queryString) {
             $elementProp = $dom->createElement('elementProp');
@@ -188,7 +186,7 @@ foreach ($json['log']['entries'] as $entry) {
     $boolProp->setAttribute('name', 'HTTPSampler.use_keepalive');
     $boolProp->nodeValue = 'true';
 
-    //todo 判断
+//todo 判断
     $boolProp = $dom->createElement('boolProp');
     $HTTPSamplerProxy->appendChild($boolProp);
     $boolProp->setAttribute('name', 'HTTPSampler.DO_MULTIPART_POST');
@@ -240,7 +238,7 @@ foreach ($json['log']['entries'] as $entry) {
         $stringProp->nodeValue = $header['value'];
     }
 
-    //CSV Data Set Config, 'put/patch' does not support
+//CSV Data Set Config, 'put/patch' does not support
     if (isset($_POST['type']) && $_POST['type'] == 2 && !in_array(strtolower($entry['request']['method']), ['put', 'patch'])) {
         $hashTree2->appendChild($dom->createElement('hashTree'));//empty node
 
