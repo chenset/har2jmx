@@ -80,9 +80,9 @@ foreach ($json['log']['entries'] as $entry) {
             $stringProp = $dom->createElement('stringProp');
             $stringProp->setAttribute('name', 'Argument.value');
             if (isset($_POST['type']) && $_POST['type'] == 2) {
-                $stringProp->nodeValue = '${' . $increaseVariableName . '}';
+                $stringProp->appendChild($dom->createCDATASection('${' . $increaseVariableName . '}'));
             } else {
-                $stringProp->nodeValue = urldecode($param['value']);
+                $stringProp->appendChild($dom->createCDATASection(urldecode($param['value'])));
             }
             $elementProp->appendChild($stringProp);
             $stringProp = $dom->createElement('stringProp');
@@ -116,9 +116,9 @@ foreach ($json['log']['entries'] as $entry) {
             $stringProp = $dom->createElement('stringProp');
             $stringProp->setAttribute('name', 'Argument.value');
             if (isset($_POST['type']) && $_POST['type'] == 2) {
-                $stringProp->nodeValue = '${' . $increaseVariableName . '}';
+                $stringProp->appendChild($dom->createCDATASection('${' . $increaseVariableName . '}'));
             } else {
-                $stringProp->nodeValue = urldecode($queryString['value']);
+                $stringProp->appendChild($dom->createCDATASection(urldecode($queryString['value'])));
             }
             $elementProp->appendChild($stringProp);
             $stringProp = $dom->createElement('stringProp');
@@ -230,12 +230,12 @@ foreach ($json['log']['entries'] as $entry) {
         $stringProp = $dom->createElement('stringProp');
         $elementProp->appendChild($stringProp);
         $stringProp->setAttribute('name', 'Header.name');
-        $stringProp->nodeValue = $header['name'];
+        $stringProp->appendChild($dom->createCDATASection($header['name']));
 
         $stringProp = $dom->createElement('stringProp');
         $elementProp->appendChild($stringProp);
         $stringProp->setAttribute('name', 'Header.value');
-        $stringProp->nodeValue = $header['value'];
+        $stringProp->appendChild($dom->createCDATASection($header['value']));
     }
 
 //CSV Data Set Config, 'put/patch' does not support
