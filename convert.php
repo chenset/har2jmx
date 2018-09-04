@@ -277,17 +277,17 @@ foreach ($json['log']['entries'] as $entry) {
         $boolProp = $dom->createElement('boolProp');
         $CSVDataSet->appendChild($boolProp);
         $boolProp->setAttribute('name', 'recycle');
-        $boolProp->nodeValue = 'true';
+        $boolProp->nodeValue = 'false';
 
         $stringProp = $dom->createElement('stringProp');
         $CSVDataSet->appendChild($stringProp);
         $stringProp->setAttribute('name', 'shareMode');
-        $stringProp->nodeValue = 'shareMode.thread';
+        $stringProp->nodeValue = 'shareMode.all';
 
         $boolProp = $dom->createElement('boolProp');
         $CSVDataSet->appendChild($boolProp);
         $boolProp->setAttribute('name', 'stopThread');
-        $boolProp->nodeValue = 'false';
+        $boolProp->nodeValue = 'true';
 
         $stringProp = $dom->createElement('stringProp');
         $CSVDataSet->appendChild($stringProp);
