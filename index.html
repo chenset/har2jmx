@@ -81,7 +81,7 @@
         var el = document.createElement("input");
         el.setAttribute("name", "text");
         el.setAttribute("type", "hidden");
-        el.setAttribute("value", window.btoa(text));
+        el.setAttribute("value", window.btoa(unescape(encodeURIComponent(text))));
         fr.appendChild(el);
 
         el = document.createElement("input");
