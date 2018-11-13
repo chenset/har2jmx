@@ -8,6 +8,20 @@ if (!isset($json['log']['entries'])) {
     die('JSON格式不正确');
 }
 
+function generateParamsFormatForJmx(&$csvVariableNames, &$increaseVariableName, &$json)
+{
+    foreach ($json as $k => &$v) {
+        if (is_array($v)) {
+            generateParamsFormatForJmx($csvVariableNames, $increaseVariableName, $v);
+        } else {
+            $v = '${' . $increaseVariableName . '}';
+            $csvVariableNames[] = $increaseVariableName++;
+        }
+    }
+}
+
+$increaseVariableName = 'a';//变量名全局只重复一次, 避免JMeter串值的问题.
+
 $dom = new \DOMDocument('1.0', 'UTF-8');
 $root = $dom->createElement("jmeterTestPlan");
 $dom->appendChild($root);
@@ -39,7 +53,6 @@ foreach ($json['log']['entries'] as $entry) {
 
     //for CSV
     $csvVariableNames = [];
-    $increaseVariableName = 'a';
 
     //HTTP body
     if (isset($entry['request']['postData']['text']) && (in_array(strtolower($entry['request']['method']), ['put', 'patch']) || null !== json_decode(stripslashes(urldecode($entry['request']['postData']['text'])), true))) {
@@ -60,7 +73,14 @@ foreach ($json['log']['entries'] as $entry) {
         $elementProp->appendChild($boolProp);
         $stringProp = $dom->createElement('stringProp');
         $stringProp->setAttribute('name', 'Argument.value');
-        $stringProp->appendChild($dom->createCDATASection(urldecode($entry['request']['postData']['text'])));
+
+        if (isset($_POST['type']) && $_POST['type'] == 2 && null !== json_decode(stripslashes(urldecode($entry['request']['postData']['text'])), true)) {
+            $recursionJson = json_decode(stripslashes(urldecode($entry['request']['postData']['text'])), true);
+            generateParamsFormatForJmx($csvVariableNames, $increaseVariableName, $recursionJson);
+            $stringProp->appendChild($dom->createCDATASection(json_encode($recursionJson)));
+        } else {
+            $stringProp->appendChild($dom->createCDATASection(urldecode($entry['request']['postData']['text'])));
+        }
         $elementProp->appendChild($stringProp);
         $stringProp = $dom->createElement('stringProp');
         $stringProp->setAttribute('name', 'Argument.metadata');
